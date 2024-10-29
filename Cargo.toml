@@ -1,0 +1,9 @@
+[package]
+name = "rust-audit-task"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+solana-program = { version = "^1.17.0" }
+spl-token = { version = "3.5.0", features = ["no-entrypoint"] }
+borsh = { version = "0.10.3" }
