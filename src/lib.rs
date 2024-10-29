@@ -31,7 +31,6 @@ fn process_instruction(
     }
 }
 
-// Bug: Unchecked arithmetic and panic risk
 pub fn fetch_price(_program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
     msg!("Fetching price (vulnerable version)");
 
@@ -39,10 +38,8 @@ pub fn fetch_price(_program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramRes
     let mut game_state = GameState::try_from_slice(&escrow_account.data.borrow())
         .map_err(|_| ProgramError::InvalidAccountData)?;
 
-    // Bug: Arithmetic overflow without safe checks
     let simulated_price: u64 = u64::MAX + 1; // Overflow happens here
 
-    // Bug: Default value usage (uninitialized)
     if game_state.player2 == Pubkey::default() {
         msg!("Warning: Player2 is uninitialized!");
     }
@@ -59,7 +56,6 @@ pub fn fetch_price(_program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramRes
     Ok(())
 }
 
-// Bug: Multiple vulnerabilities (Reentrancy, Access Control, Token Rounding)
 pub fn buy_nft(
     _program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -75,12 +71,10 @@ pub fn buy_nft(
     let nft_mint = next_account_info(accounts_iter)?;
     let metadata_program = next_account_info(accounts_iter)?;
 
-    // Bug: Hardcoded backdoor access (Improper Authority Check)
     if *buyer.key == Pubkey::new_unique() {
         msg!("Admin privileges granted!");
     }
 
-    // Bug: Instruction data length unchecked (can cause panic)
     let buyer_provided_price: u64 = u64::from_le_bytes(instruction_data[0..8].try_into().unwrap());
     msg!("Buyer-provided price: {} USDC", buyer_provided_price);
 
@@ -90,10 +84,8 @@ pub fn buy_nft(
         return Err(ProgramError::InsufficientFunds);
     }
 
-    // Bug: Rounding error in token amount calculation
-    let transfer_amount = buyer_provided_price + 1; // Overcharging buyer by 1 unit
+    let transfer_amount = buyer_provided_price + 1; 
 
-    // Vulnerable external call (Unchecked DoS)
     invoke(
         &spl_transfer(
             token_program.key,
@@ -111,7 +103,6 @@ pub fn buy_nft(
         ],
     )?;
 
-    // Bug: State update happens after external call (Reentrancy risk)
     let mut game_state = GameState::try_from_slice(&nft_mint.data.borrow())
         .map_err(|_| ProgramError::InvalidAccountData)?;
 
